@@ -25,6 +25,12 @@ export const agregarEntrenamientoSchema = Joi.object({
         "number.positive": "La duración debe ser mayor a 0.",
         "any.required": "La duración es obligatoria."
     }),
+    cupoMaximo: Joi.number().integer().min(1).required().messages({
+        "number.base": "El cupo debe ser un número.",
+        "number.integer": "El cupo debe ser un número entero.",
+        "number.min": "El cupo debe ser al menos 1.",
+        "any.required": "El cupo es obligatorio."
+    }),
     fecha: Joi.date().iso().required().messages({
         "date.base": "La fecha debe tener un formato válido.",
         "date.format": "La fecha debe estar en formato ISO.",
@@ -61,6 +67,11 @@ export const modificarEntrenamientoSchema = Joi.object({
         "number.base": "La duración debe ser un número.",
         "number.integer": "La duración debe ser un número entero.",
         "number.positive": "La duración debe ser mayor a 0."
+    }),
+    cupoMaximo: Joi.number().integer().min(1).messages({
+        "number.base": "El cupo debe ser un número.",
+        "number.integer": "El cupo debe ser un número entero.",
+        "number.min": "El cupo debe ser al menos 1."
     }),
     fecha: Joi.string().pattern(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/).messages({
         "string.empty": "La fecha no puede estar vacía.",

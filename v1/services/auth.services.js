@@ -27,7 +27,8 @@ export const registrarUsuarioService = async (usuario) => {
         nombre: nuevoUsuario.nombre,
         email: nuevoUsuario.email,
         rol: nuevoUsuario.rol,
-        plan: nuevoUsuario.plan
+        plan: nuevoUsuario.plan,
+        fotoPerfil: nuevoUsuario.fotoPerfil
     };
 
     return { usuario: usuarioRespuesta, token };
@@ -37,7 +38,7 @@ export const registrarUsuarioService = async (usuario) => {
 export const loginUsuarioService = async (email, password) => {
     const usuario = await Usuario.findOne({ email });
     if (!usuario) {
-        const errorUsuarioInexistente = new Error("No existe usuario con ese email.");
+        const errorUsuarioInexistente = new Error("Credenciales inválidas.");
         errorUsuarioInexistente.status = 404;
         errorUsuarioInexistente.details = { email };
         throw errorUsuarioInexistente;
@@ -45,7 +46,7 @@ export const loginUsuarioService = async (email, password) => {
 
     const isMatch = bcrypt.compareSync(password, usuario.password);
     if (!isMatch) {
-        const errorContraseñaIncorrecta = new Error("Contraseña inválida.");
+        const errorContraseñaIncorrecta = new Error("Credenciales inválidas.");
         errorContraseñaIncorrecta.status = 401;
         throw errorContraseñaIncorrecta;
     }
@@ -57,7 +58,8 @@ export const loginUsuarioService = async (email, password) => {
         nombre: usuario.nombre,
         email: usuario.email,
         rol: usuario.rol,
-        plan: usuario.plan
+        plan: usuario.plan,
+        fotoPerfil: usuario.fotoPerfil
     };
     return { usuario: usuarioRespuesta, token };
 };

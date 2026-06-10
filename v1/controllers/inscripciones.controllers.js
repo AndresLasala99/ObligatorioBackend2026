@@ -1,4 +1,4 @@
-import { inscribirseAEntrenamientoService,eliminarInscripcionService,obtenerMisInscripcionesService } from "../services/inscripciones.services.js";
+import { inscribirseAEntrenamientoService,eliminarInscripcionService,obtenerMisInscripcionesService, obtenerMisEstadisticasClienteService } from "../services/inscripciones.services.js";
 
 export const inscribirseAEntrenamiento = async (req, res) => {
     const { idEntrenamiento } = req.body;
@@ -16,7 +16,12 @@ export const eliminarInscripcion = async (req, res) => {
 
 export const obtenerMisInscripciones = async (req, res) => {
     const idUsuario = req.decoded.id;
-    const { page, limit } = req.query;
-    const resultado = await obtenerMisInscripcionesService(idUsuario, page, limit);
+    const { page, limit, tipo } = req.query;
+    const resultado = await obtenerMisInscripcionesService(idUsuario, page, limit, tipo);
     res.status(200).json({message: "Inscripciones obtenidas correctamente.", resultado: resultado});
+};
+
+export const obtenerMisEstadisticasCliente = async (req, res) => {
+    const resultado = await obtenerMisEstadisticasClienteService(req.decoded.id);
+    res.status(200).json({message: "Estadísticas del cliente obtenidas correctamente.", ...resultado});
 };

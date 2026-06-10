@@ -2,7 +2,6 @@ import { isValidObjectId } from "mongoose";
 import Categoria from "../model/categoria.model.js"
 import Entrenamiento from "../model/entrenamiento.model.js"
 import Usuario from "../model/usuario.model.js"
-import { useGemini25FlashService } from "./ai.services.js"
 
 export const obtenerCategoriasService = async (page, limit, nombre) => {
     limit = Number(limit) || 3;
@@ -15,9 +14,10 @@ export const obtenerCategoriasService = async (page, limit, nombre) => {
         filtros.nombre = { $regex: nombre, $options: "i" };
     }
 
-    const skip = (page - 1) * limit;
     const cantidadCategorias = await Categoria.countDocuments(filtros);
     const totalPages = Math.ceil(cantidadCategorias / limit);
+    if (totalPages > 0 && page > totalPages) page = totalPages;
+    const skip = (page - 1) * limit;
     const categorias = await Categoria.find(filtros).skip(skip).limit(limit);
     return { categorias, page, limit, totalPages, cantidadCategorias };
 };
@@ -45,25 +45,6 @@ export const crearCategoriaService = async (categoriaGuardar, idUsuario) => {
         errorCategoriaExistente.status = 409;
         errorCategoriaExistente.details = { nombre: categoriaGuardar.nombre };
         throw errorCategoriaExistente;
-    }
-
-    if (categoriaGuardar.descripcion) {
-        const prompt = `Generá una descripción breve, clara y profesional para una categoría de entrenamientos de gimnasio llamada "${categoriaGuardar.nombre}".
-                        IMPORTANTE:
-                        - Respondé SOLO con la descripción final.
-                        - No agregues introducciones.
-                        - No digas "opción", "te dejo", ni nada similar.
-                        - No uses listas ni markdown.
-                        - No expliques nada.
-                        - Máximo 200 caracteres.
-                        Pedido del usuario: ${categoriaGuardar.descripcion}`;
-
-        const descripcionGenerada = await useGemini25FlashService(prompt);
-        if (descripcionGenerada) {
-            categoriaGuardar.descripcion = descripcionGenerada.trim();
-        } else {
-            categoriaGuardar.descripcion = `Categoría de entrenamientos enfocada en ${categoriaGuardar.nombre}, pensada para mejorar el rendimiento físico de forma progresiva.`;
-        }
     }
 
     const categoria = new Categoria(categoriaGuardar);

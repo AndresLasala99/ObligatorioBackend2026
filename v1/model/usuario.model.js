@@ -7,6 +7,7 @@ const usuarioSchema = new mongoose.Schema({
     password: { type: String, required: true },
     rol: { type: String, enum: ["cliente", "entrenador"], required: true },
     plan: { type: String, enum: ["plus", "premium"], default: null },
+    fotoPerfil: { type: String },
     entrenamientosCreados: [{ type: mongoose.Schema.Types.ObjectId, ref: "Entrenamiento" }],
     inscripciones: [{ type: mongoose.Schema.Types.ObjectId, ref: "Inscripcion" }]
 });

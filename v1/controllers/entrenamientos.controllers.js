@@ -1,9 +1,20 @@
-import { actualizarEntrenamientoService, crearEntrenamientoService, eliminarEntrenamientoService, obtenerEntrenamientosService, obtenerEntrenamientoPorIdService } from "../services/entrenamientos.services.js";
+﻿import { actualizarEntrenamientoService, crearEntrenamientoService, eliminarEntrenamientoService, obtenerEntrenamientosService, obtenerEntrenamientoPorIdService, obtenerMisEntrenamientosService, obtenerMisEstadisticasService } from "../services/entrenamientos.services.js";
 
 export const obtenerEntrenamientos = async (req, res) => {
-    const { page, limit, nivel, categoria, titulo } = req.query;
-    const resultado = await obtenerEntrenamientosService(page,limit,nivel,categoria,titulo);
+    const { page, limit, nivel, categoria, titulo, disponibles, entrenador } = req.query;
+    const resultado = await obtenerEntrenamientosService(page,limit,nivel,categoria,titulo,disponibles,entrenador);
     res.json({message: "Obtener todos los entrenamientos.",...resultado});
+};
+
+export const obtenerMisEntrenamientos = async (req, res) => {
+    const { page, limit, nivel, categoria, titulo, tipo } = req.query;
+    const resultado = await obtenerMisEntrenamientosService(req.decoded.id,page,limit,nivel,categoria,titulo,tipo);
+    res.json({message: "Obtener entrenamientos del entrenador logueado.",...resultado});
+};
+
+export const obtenerMisEstadisticas = async (req, res) => {
+    const resultado = await obtenerMisEstadisticasService(req.decoded.id);
+    res.json({message: "Obtener estadísticas del entrenador logueado.",...resultado});
 };
 
 export const crearEntrenamiento = async (req, res) => {
@@ -28,3 +39,4 @@ export const eliminarEntrenamiento = async (req, res) => {
     await eliminarEntrenamientoService(id, req.decoded.id);
     res.json({message: "Entrenamiento eliminado correctamente."});
 };
+

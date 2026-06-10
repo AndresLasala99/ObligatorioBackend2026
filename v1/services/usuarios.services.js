@@ -1,9 +1,10 @@
-import { isValidObjectId } from "mongoose";
+﻿import { isValidObjectId } from "mongoose";
+import bcrypt from "bcryptjs";
 import Usuario from "../model/usuario.model.js"
 
 export const obtenerPerfilUsuarioService = async (idUsuarioLogueado) => {
     if (!isValidObjectId(idUsuarioLogueado)) {
-        const errorIdInvalido = new Error("ID de usuario inválido.");
+        const errorIdInvalido = new Error("ID de usuario invÃ¡lido.");
         errorIdInvalido.status = 400;
         errorIdInvalido.details = { idUsuarioLogueado };
         throw errorIdInvalido;
@@ -17,12 +18,53 @@ export const obtenerPerfilUsuarioService = async (idUsuarioLogueado) => {
         errorUsuarioNoEncontrado.details = { idUsuarioLogueado };
         throw errorUsuarioNoEncontrado;
     }
-    return usuarioBuscado;
+    const usuarioObjeto = usuarioBuscado.toObject();
+    delete usuarioObjeto.password;
+
+    const entrenamientosCreados = usuarioObjeto.entrenamientosCreados?.length || 0;
+    const limitePlan = usuarioObjeto.plan === "plus" ? 4 : null;
+    const porcentajeUso = limitePlan ? Math.min((entrenamientosCreados * 100) / limitePlan, 100) : 100;
+    const entrenamientosRestantes = limitePlan ? Math.max(limitePlan - entrenamientosCreados, 0) : "Sin límite";
+
+    usuarioObjeto.usoPlan = {
+        entrenamientosCreados,
+        limitePlan,
+        porcentajeUso,
+        entrenamientosRestantes
+    };
+
+    if (usuarioObjeto.rol === "cliente") {
+        const hoy = new Date();
+        const inscripciones = usuarioObjeto.inscripciones || [];
+        const inscripcionesActivas = inscripciones.filter((inscripcion) => (
+            inscripcion.estado === "activa" && new Date(inscripcion.entrenamiento?.fecha) >= hoy
+        ));
+        const entrenamientosRealizados = inscripciones.filter((inscripcion) => (
+            inscripcion.estado === "activa" && new Date(inscripcion.entrenamiento?.fecha) < hoy
+        ));
+        const inscripcionesCanceladas = inscripciones.filter((inscripcion) => inscripcion.estado === "cancelada");
+        const proximoEntrenamiento = [...inscripcionesActivas].sort((a, b) => (
+            new Date(a.entrenamiento?.fecha) - new Date(b.entrenamiento?.fecha)
+        ))[0] || null;
+        const ultimoEntrenamiento = [...entrenamientosRealizados].sort((a, b) => (
+            new Date(b.entrenamiento?.fecha) - new Date(a.entrenamiento?.fecha)
+        ))[0] || null;
+
+        usuarioObjeto.actividadCliente = {
+            cantidadInscripcionesActivas: inscripcionesActivas.length,
+            cantidadEntrenamientosRealizados: entrenamientosRealizados.length,
+            cantidadInscripcionesCanceladas: inscripcionesCanceladas.length,
+            proximoEntrenamiento,
+            ultimoEntrenamiento
+        };
+    }
+
+    return usuarioObjeto;
 };
 
 export const cambiarPlanUsuarioService = async (id, planActualizar, idUsuarioLogueado) => {
     if (!isValidObjectId(id)) {
-        const errorIdInvalido = new Error("ID de usuario inválido.");
+        const errorIdInvalido = new Error("ID de usuario invÃ¡lido.");
         errorIdInvalido.status = 400;
         errorIdInvalido.details = { id };
         throw errorIdInvalido;
@@ -50,7 +92,7 @@ export const cambiarPlanUsuarioService = async (id, planActualizar, idUsuarioLog
     }
 
     if (planActualizar.plan !== "premium") {
-        const errorNuevoPlanInvalido = new Error("El único cambio permitido es de plus a premium.");
+        const errorNuevoPlanInvalido = new Error("El Ãºnico cambio permitido es de plus a premium.");
         errorNuevoPlanInvalido.status = 400;
         throw errorNuevoPlanInvalido;
     }
@@ -70,6 +112,72 @@ export const cambiarPlanUsuarioService = async (id, planActualizar, idUsuarioLog
     usuarioExistente.plan = "premium";
     await usuarioExistente.save();
     return usuarioExistente;
+};
+
+export const actualizarFotoPerfilUsuarioService = async (fotoActualizar, idUsuarioLogueado) => {
+    if (!isValidObjectId(idUsuarioLogueado)) {
+        const errorIdInvalido = new Error("ID de usuario invalido.");
+        errorIdInvalido.status = 400;
+        errorIdInvalido.details = { idUsuarioLogueado };
+        throw errorIdInvalido;
+    }
+
+    const usuarioActualizado = await Usuario.findByIdAndUpdate(idUsuarioLogueado, fotoActualizar, { returnDocument: "after" });
+
+    if (!usuarioActualizado) {
+        const errorUsuarioNoEncontrado = new Error("Usuario no encontrado.");
+        errorUsuarioNoEncontrado.status = 404;
+        errorUsuarioNoEncontrado.details = { idUsuarioLogueado };
+        throw errorUsuarioNoEncontrado;
+    }
+
+    return usuarioActualizado;
+};
+
+export const cambiarPasswordUsuarioService = async (passwordActualizar, idUsuarioLogueado) => {
+    if (!isValidObjectId(idUsuarioLogueado)) {
+        const errorIdInvalido = new Error("ID de usuario invalido.");
+        errorIdInvalido.status = 400;
+        errorIdInvalido.details = { idUsuarioLogueado };
+        throw errorIdInvalido;
+    }
+
+    const usuarioExistente = await Usuario.findById(idUsuarioLogueado);
+
+    if (!usuarioExistente) {
+        const errorUsuarioNoEncontrado = new Error("Usuario no encontrado.");
+        errorUsuarioNoEncontrado.status = 404;
+        errorUsuarioNoEncontrado.details = { idUsuarioLogueado };
+        throw errorUsuarioNoEncontrado;
+    }
+
+    const passwordCorrecta = bcrypt.compareSync(passwordActualizar.passwordActual, usuarioExistente.password);
+
+    if (!passwordCorrecta) {
+        const errorPasswordInvalida = new Error("La contraseña actual es incorrecta.");
+        errorPasswordInvalida.status = 401;
+        throw errorPasswordInvalida;
+    }
+
+    const mismaPassword = bcrypt.compareSync(passwordActualizar.passwordNueva, usuarioExistente.password);
+
+    if (mismaPassword) {
+        const errorMismaPassword = new Error("La nueva contraseña debe ser distinta a la actual.");
+        errorMismaPassword.status = 409;
+        throw errorMismaPassword;
+    }
+
+    usuarioExistente.password = passwordActualizar.passwordNueva;
+    await usuarioExistente.save();
+
+    return {
+        _id: usuarioExistente._id,
+        nombre: usuarioExistente.nombre,
+        email: usuarioExistente.email,
+        rol: usuarioExistente.rol,
+        plan: usuarioExistente.plan,
+        fotoPerfil: usuarioExistente.fotoPerfil,
+    };
 };
 
 
