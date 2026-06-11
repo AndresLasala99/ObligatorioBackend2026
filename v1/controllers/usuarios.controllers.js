@@ -1,4 +1,9 @@
-﻿import { obtenerPerfilUsuarioService, cambiarPlanUsuarioService, actualizarFotoPerfilUsuarioService, cambiarPasswordUsuarioService } from "../services/usuarios.services.js";
+import { obtenerPerfilUsuarioService, cambiarPlanUsuarioService, actualizarFotoPerfilUsuarioService, cambiarPasswordUsuarioService, obtenerEntrenadoresService } from "../services/usuarios.services.js";
+
+export const obtenerEntrenadores = async (req, res) => {
+    const entrenadores = await obtenerEntrenadoresService();
+    res.json({message: "Listado de entrenadores obtenido correctamente.",entrenadores});
+};
 
 export const obtenerPerfilUsuario = async (req, res) => {
     const usuarioBuscado = await obtenerPerfilUsuarioService(req.decoded.id);

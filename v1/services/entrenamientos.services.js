@@ -27,9 +27,13 @@ export const obtenerEntrenamientosService = async (page, limit, nivel, categoria
         filtros.titulo = { $regex: titulo, $options: "i" };
     }
     if (entrenador) {
-        const entrenadores = await Usuario.find({ nombre: { $regex: entrenador, $options: "i" }, rol: "entrenador" });
-        const idsEntrenadores = entrenadores.map((entrenadorEncontrado) => entrenadorEncontrado._id);
-        filtros.creadoPor = { $in: idsEntrenadores };
+        if (isValidObjectId(entrenador)) {
+            filtros.creadoPor = entrenador;
+        } else {
+            const entrenadores = await Usuario.find({ nombre: { $regex: entrenador, $options: "i" }, rol: "entrenador" });
+            const idsEntrenadores = entrenadores.map((entrenadorEncontrado) => entrenadorEncontrado._id);
+            filtros.creadoPor = { $in: idsEntrenadores };
+        }
     }
     if (disponibles === "true") {
         filtros.fecha = { $gte: new Date() };

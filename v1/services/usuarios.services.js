@@ -1,10 +1,14 @@
-﻿import { isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
 import bcrypt from "bcryptjs";
 import Usuario from "../model/usuario.model.js"
 
+export const obtenerEntrenadoresService = async () => {
+    const entrenadores = await Usuario.find({ rol: "entrenador" }).select("nombre email fotoPerfil").sort({ nombre: 1 });
+    return entrenadores;
+};
 export const obtenerPerfilUsuarioService = async (idUsuarioLogueado) => {
     if (!isValidObjectId(idUsuarioLogueado)) {
-        const errorIdInvalido = new Error("ID de usuario invÃ¡lido.");
+        const errorIdInvalido = new Error("ID de usuario inválido.");
         errorIdInvalido.status = 400;
         errorIdInvalido.details = { idUsuarioLogueado };
         throw errorIdInvalido;
@@ -24,7 +28,7 @@ export const obtenerPerfilUsuarioService = async (idUsuarioLogueado) => {
     const entrenamientosCreados = usuarioObjeto.entrenamientosCreados?.length || 0;
     const limitePlan = usuarioObjeto.plan === "plus" ? 4 : null;
     const porcentajeUso = limitePlan ? Math.min((entrenamientosCreados * 100) / limitePlan, 100) : 100;
-    const entrenamientosRestantes = limitePlan ? Math.max(limitePlan - entrenamientosCreados, 0) : "Sin límite";
+    const entrenamientosRestantes = limitePlan ? Math.max(limitePlan - entrenamientosCreados, 0) : "Sin l�mite";
 
     usuarioObjeto.usoPlan = {
         entrenamientosCreados,
@@ -64,7 +68,7 @@ export const obtenerPerfilUsuarioService = async (idUsuarioLogueado) => {
 
 export const cambiarPlanUsuarioService = async (id, planActualizar, idUsuarioLogueado) => {
     if (!isValidObjectId(id)) {
-        const errorIdInvalido = new Error("ID de usuario invÃ¡lido.");
+        const errorIdInvalido = new Error("ID de usuario inválido.");
         errorIdInvalido.status = 400;
         errorIdInvalido.details = { id };
         throw errorIdInvalido;
@@ -92,7 +96,7 @@ export const cambiarPlanUsuarioService = async (id, planActualizar, idUsuarioLog
     }
 
     if (planActualizar.plan !== "premium") {
-        const errorNuevoPlanInvalido = new Error("El Ãºnico cambio permitido es de plus a premium.");
+        const errorNuevoPlanInvalido = new Error("El único cambio permitido es de plus a premium.");
         errorNuevoPlanInvalido.status = 400;
         throw errorNuevoPlanInvalido;
     }
@@ -154,7 +158,7 @@ export const cambiarPasswordUsuarioService = async (passwordActualizar, idUsuari
     const passwordCorrecta = bcrypt.compareSync(passwordActualizar.passwordActual, usuarioExistente.password);
 
     if (!passwordCorrecta) {
-        const errorPasswordInvalida = new Error("La contraseña actual es incorrecta.");
+        const errorPasswordInvalida = new Error("La contrase�a actual es incorrecta.");
         errorPasswordInvalida.status = 401;
         throw errorPasswordInvalida;
     }
@@ -162,7 +166,7 @@ export const cambiarPasswordUsuarioService = async (passwordActualizar, idUsuari
     const mismaPassword = bcrypt.compareSync(passwordActualizar.passwordNueva, usuarioExistente.password);
 
     if (mismaPassword) {
-        const errorMismaPassword = new Error("La nueva contraseña debe ser distinta a la actual.");
+        const errorMismaPassword = new Error("La nueva contrase�a debe ser distinta a la actual.");
         errorMismaPassword.status = 409;
         throw errorMismaPassword;
     }
