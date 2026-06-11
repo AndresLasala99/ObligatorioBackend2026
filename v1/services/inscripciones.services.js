@@ -50,7 +50,7 @@ export const inscribirseAEntrenamientoService = async (idEntrenamiento, idUsuari
     const inscripcionExistente = await Inscripcion.findOne({ usuario: idUsuario, entrenamiento: idEntrenamiento });
 
     if (inscripcionExistente && (!inscripcionExistente.estado || inscripcionExistente.estado === "activa")) {
-        const errorYaInscripto = new Error("El cliente ya esta inscripto a este entrenamiento.");
+        const errorYaInscripto = new Error("Ya estás inscripto a este entrenamiento.");
         errorYaInscripto.status = 409;
         errorYaInscripto.details = { idEntrenamiento, idUsuario };
         throw errorYaInscripto;
